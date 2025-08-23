@@ -13,40 +13,48 @@ export default function Header() {
   };
 
   return (
-    <>
-      <header>
-        {/* Student Number */}
-        <span className="student-number">22206653</span>
+    <header>
+      {/* Student Number */}
+      <span className="student-number">22206653</span>
 
-        {/* Right side controls */}
-        <div className="header-controls">
-          {/* Hamburger button */}
-          <button
-            className={`hamburger ${isOpen ? "is-active" : ""}`}
-            onClick={toggleMenu}
-            aria-label="Toggle Menu"
-            aria-expanded={isOpen}
-            aria-controls="main-navigation"
-          >
-            <span className="bar"></span>
-            <span className="bar"></span>
-            <span className="bar"></span>
-          </button>
+      {/* Always visible desktop nav */}
+      <nav className="desktop-nav" role="navigation">
+        <ul>
+          <li><Link href="/">Home</Link></li>
+          <li><Link href="/about">About</Link></li>
+          <li><Link href="/escape-room">Escape Room</Link></li>
+          <li><Link href="/coding-races">Coding Races</Link></li>
+          <li><Link href="/court-rooms">Court Rooms</Link></li>
+          <li><Link href="/tabs-generator">Tabs Generator</Link></li>
+        </ul>
+      </nav>
 
-          {/* Theme toggle */}
-          <button
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
-            {dark ? "☀️" : "🌙"}
-          </button>
-        </div>
-      </header>
+      {/* Controls (hamburger + theme toggle) */}
+      <div className="header-controls">
+        <button
+          className={`hamburger ${isOpen ? "is-active" : ""}`}
+          onClick={toggleMenu}
+          aria-label="Toggle Menu"
+          aria-expanded={isOpen}
+          aria-controls="mobile-navigation"
+        >
+          <span className="bar"></span>
+          <span className="bar"></span>
+          <span className="bar"></span>
+        </button>
 
-      {/* Navigation below header */}
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+        >
+          {dark ? "☀️" : "🌙"}
+        </button>
+      </div>
+
+      {/* Dropdown Nav (works on desktop + mobile) */}
       <nav
-        id="main-navigation"
+        id="mobile-navigation"
         className={`nav-links ${isOpen ? "open" : ""}`}
         role="navigation"
       >
@@ -59,6 +67,6 @@ export default function Header() {
           <li><Link href="/tabs-generator" onClick={() => setIsOpen(false)}>Tabs Generator</Link></li>
         </ul>
       </nav>
-    </>
+    </header>
   );
 }
