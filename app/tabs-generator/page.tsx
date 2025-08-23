@@ -1,4 +1,5 @@
 //tabs
+//generator
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
