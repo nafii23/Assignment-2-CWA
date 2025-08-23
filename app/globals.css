@@ -89,33 +89,46 @@ header {
 }
 
 /* Dropdown Nav (only shows when hamburger clicked) */
-.nav-links {
-  display: none;
+/* Dropdown Nav (separate under header) */
+/* ==== Header Controls (keep hamburger + theme on right) ==== */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
 }
-.nav-links.open {
-  display: block;
-  position: absolute;
-  top: 60px;
-  right: 20px;
-  background: var(--header-bg, #fff);
-  padding: 1rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+
+/* ==== Always-visible desktop nav ==== */
+.desktop-nav {
+  display: none; /* hidden by default */
+  flex: 1 1 100%;
+  margin-top: 0.75rem;
 }
-.nav-links ul {
+.desktop-nav ul {
   list-style: none;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
+  gap: 1.25rem;
+  justify-content: center;
 }
-.nav-links a {
+.desktop-nav a {
   text-decoration: none;
   color: var(--text-color, #000);
   font-weight: 500;
 }
-.nav-links a:hover,
-.nav-links a:focus {
+.desktop-nav a:hover,
+.desktop-nav a:focus {
   text-decoration: underline;
+}
+
+/* ==== Responsive ==== */
+@media (min-width: 769px) {
+  .desktop-nav {
+    display: block;   /* show full nav */
+  }
+  .nav-links {
+    display: none;    /* hide dropdown */
+  }
 }
 
 /* Theme toggle */
