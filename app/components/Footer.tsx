@@ -1,3 +1,5 @@
+// commit test for header-footer branch
+
 export default function Footer() {
   const today = new Date().toLocaleDateString();
 
