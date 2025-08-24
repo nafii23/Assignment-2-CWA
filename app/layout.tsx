@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Breadcrumbs from "./components/Breadcrumbs";  // 👈 add
 
 export const metadata: Metadata = {
   title: "LTU Assignment 1",
@@ -19,6 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <Header />
 
+        {/* 👇 Breadcrumbs goes here */}
+        <Breadcrumbs />
+
         <main id="main" tabIndex={-1} role="main">
           {children}
         </main>
@@ -28,4 +32,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

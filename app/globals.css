@@ -195,3 +195,42 @@ body.dark .student-number {
 body.dark .hamburger .bar {
   background-color: #f5f5f5;
 }
+/* ==== Breadcrumbs ==== */
+.breadcrumbs {
+  margin: 1rem auto;           /* space around breadcrumbs */
+  padding: 0.5rem 1rem;
+  width: 100%;
+  max-width: 1200px;           /* keep it neat */
+}
+
+.breadcrumbs ol {
+  list-style: none;
+  display: flex;               /* horizontal */
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.breadcrumbs li::after {
+  content: "›";                /* separator arrow */
+  margin: 0 0.5rem;
+  color: #888;
+}
+
+.breadcrumbs li:last-child::after {
+  content: "";                 /* no arrow after last */
+}
+
+.breadcrumbs a {
+  color: var(--text-color, #005fcc);
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover,
+.breadcrumbs a:focus {
+  text-decoration: underline;
+}
+
+.breadcrumbs span {
+  font-weight: bold;           /* current page */
+}

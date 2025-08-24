@@ -38,3 +38,13 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 # LTU Assignment 1
 Student: Abdinafi Mohamed (Student Number: 22206653)  
 Description: A Next.js web app with Header, Footer, Tabs Generator, Theme Toggle, and Accessibility features.
+
+## AI Assistance
+
+This project was developed with the assistance of generative AI (ChatGPT).  
+AI was used to help with:
+- Clarifying assignment requirements
+- Providing code snippets for UI components (header, hamburger menu, tabs generator, cookies, and breadcrumbs)
+- Debugging and improving accessibility features
+
+All AI-generated code was reviewed, tested, and adapted by the author to meet the assignment specifications.

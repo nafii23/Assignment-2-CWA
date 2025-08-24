@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import useLastPageCookie from "../hooks/uselastPageCookie";
+import Breadcrumbs from "./Breadcrumbs";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +16,7 @@ export default function Header() {
 
   return (
     <header>
+      
       {/* Student Number */}
       <span className="student-number">22206653</span>
 
@@ -28,7 +31,7 @@ export default function Header() {
           <li><Link href="/tabs-generator">Tabs Generator</Link></li>
         </ul>
       </nav>
-
+      
       {/* Controls (hamburger + theme toggle) */}
       <div className="header-controls">
         <button
@@ -68,5 +71,6 @@ export default function Header() {
         </ul>
       </nav>
     </header>
+    
   );
 }
