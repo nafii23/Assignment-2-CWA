@@ -1,8 +1,6 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import useLastPageCookie from "../hooks/uselastPageCookie";
-import Breadcrumbs from "./Breadcrumbs";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +24,6 @@ export default function Header() {
           <li><Link href="/">Home</Link></li>
           <li><Link href="/about">About</Link></li>
           <li><Link href="/escape-room">Escape Room</Link></li>
-          <li><Link href="/coding-races">Coding Races</Link></li>
-          <li><Link href="/court-rooms">Court Rooms</Link></li>
           <li><Link href="/tabs-generator">Tabs Generator</Link></li>
         </ul>
       </nav>

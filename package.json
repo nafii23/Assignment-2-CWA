@@ -2,26 +2,39 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+ "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "jmeter": "jmeter -n -t tests/load/escape-room-api-test.jmx -l results.jtl -e -o jmeter-report"
   },
   "dependencies": {
+    "@prisma/client": "^6.16.3",
     "js-cookie": "^3.0.5",
+    "morgan": "^1.10.1",
     "next": "15.4.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.0",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "artillery": "^2.0.26",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.56.0",
+    "prisma": "^6.16.3",
     "typescript": "^5"
   }
 }
