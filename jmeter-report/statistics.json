@@ -1,0 +1,50 @@
+{
+  "GET Escape Room API" : {
+    "transaction" : "GET Escape Room API",
+    "sampleCount" : 100,
+    "errorCount" : 100,
+    "errorPct" : 100.0,
+    "meanResTime" : 4076.1199999999994,
+    "medianResTime" : 4073.0,
+    "minResTime" : 4046.0,
+    "maxResTime" : 4176.0,
+    "pct1ResTime" : 4094.0,
+    "pct2ResTime" : 4123.95,
+    "pct3ResTime" : 4175.96,
+    "throughput" : 1.2245747664123632,
+    "receivedKBytesPerSec" : 3.277890072984656,
+    "sentKBytesPerSec" : 0.0
+  },
+  "Total" : {
+    "transaction" : "Total",
+    "sampleCount" : 200,
+    "errorCount" : 200,
+    "errorPct" : 100.0,
+    "meanResTime" : 4077.9950000000003,
+    "medianResTime" : 4076.0,
+    "minResTime" : 4045.0,
+    "maxResTime" : 4223.0,
+    "pct1ResTime" : 4096.9,
+    "pct2ResTime" : 4128.8,
+    "pct3ResTime" : 4175.96,
+    "throughput" : 2.3323887159033925,
+    "receivedKBytesPerSec" : 6.2432397170812495,
+    "sentKBytesPerSec" : 0.0
+  },
+  "POST Escape Room API" : {
+    "transaction" : "POST Escape Room API",
+    "sampleCount" : 100,
+    "errorCount" : 100,
+    "errorPct" : 100.0,
+    "meanResTime" : 4079.8700000000013,
+    "medianResTime" : 4076.5,
+    "minResTime" : 4045.0,
+    "maxResTime" : 4223.0,
+    "pct1ResTime" : 4099.9,
+    "pct2ResTime" : 4143.95,
+    "pct3ResTime" : 4222.38,
+    "throughput" : 1.2252799764746243,
+    "receivedKBytesPerSec" : 3.279777749528267,
+    "sentKBytesPerSec" : 0.0
+  }
+}
