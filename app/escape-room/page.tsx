@@ -3,14 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 
 const TimerIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="13" r="9"/>
     <path d="M12 7v6l4 2"/>
+    <path d="M12 4V2"/>
+    <path d="M10 2h4"/>
   </svg>
 );
 
 const HintIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/>
     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
     <line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -38,6 +40,7 @@ export default function EscapeRoom() {
   const [difficulty, setDifficulty] = useState('medium');
   const [backgroundTheme, setBackgroundTheme] = useState('dark');
   const [timeLeft, setTimeLeft] = useState(0);
+  const [startTime, setStartTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [currentStage, setCurrentStage] = useState(0);
   const [userCode, setUserCode] = useState("");
@@ -57,7 +60,11 @@ export default function EscapeRoom() {
         setTimeLeft(prev => {
           if (prev <= 1) {
             setIsRunning(false);
+            setGameMode('completed');
+            const elapsed = startTime;
+            setCompletedTime(elapsed);
             setMessage("⏰ Time's up! Game over!");
+            generateHTML(selectedChallenges.slice(0, numStages).length, elapsed);
             return 0;
           }
           return prev - 1;
@@ -65,7 +72,10 @@ export default function EscapeRoom() {
       }, 1000);
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [isRunning, timeLeft]);
 
@@ -81,16 +91,27 @@ export default function EscapeRoom() {
       setMessage("⚠️ Select at least one challenge!");
       return;
     }
-    setTimeLeft(customTime * 60);
+    if (challenges.length < numStages) {
+      setMessage(`⚠️ Not enough challenges selected! Need ${numStages}, have ${challenges.length}`);
+      return;
+    }
+    
+    const gameStartTime = customTime * 60;
+    setStartTime(gameStartTime);
+    setTimeLeft(gameStartTime);
     setIsRunning(true);
     setGameMode('playing');
     setCurrentStage(0);
-    const firstChallenge = ALL_CHALLENGES.find(c => c.id === challenges[0]);
-    setUserCode(firstChallenge?.challenge || "");
-    setMessage(`🎮 Game started! Solve ${challenges.length} challenges in ${customTime} minutes!`);
     setGameWon(false);
     setAttemptCount(0);
     setShowHint(false);
+    setCompletedTime(0);
+    setGeneratedHTML("");
+    setSavedId("");
+    
+    const firstChallenge = ALL_CHALLENGES.find(c => c.id === challenges[0]);
+    setUserCode(firstChallenge?.challenge || "");
+    setMessage(`🎮 Game started! Solve ${challenges.length} challenges in ${customTime} minutes!`);
   };
 
   const startPresetGame = (preset: 'easy' | 'medium' | 'hard') => {
@@ -100,11 +121,28 @@ export default function EscapeRoom() {
       hard: { time: 8, challenges: [1, 2, 5, 7, 8, 9] }
     };
     const config = presets[preset];
+    
     setCustomTime(config.time);
     setNumStages(config.challenges.length);
     setSelectedChallenges(config.challenges);
     setDifficulty(preset);
-    setTimeout(() => startCustomGame(), 100);
+    
+    const gameStartTime = config.time * 60;
+    setStartTime(gameStartTime);
+    setTimeLeft(gameStartTime);
+    setIsRunning(true);
+    setGameMode('playing');
+    setCurrentStage(0);
+    setGameWon(false);
+    setAttemptCount(0);
+    setShowHint(false);
+    setCompletedTime(0);
+    setGeneratedHTML("");
+    setSavedId("");
+    
+    const firstChallenge = ALL_CHALLENGES.find(c => c.id === config.challenges[0]);
+    setUserCode(firstChallenge?.challenge || "");
+    setMessage(`🎮 ${preset.toUpperCase()} mode started! Solve ${config.challenges.length} challenges in ${config.time} minutes!`);
   };
 
   const formatTime = (seconds: number) => {
@@ -118,6 +156,11 @@ export default function EscapeRoom() {
   };
 
   const checkSolution = () => {
+    if (!isRunning) {
+      setMessage("⚠️ Game is not active!");
+      return;
+    }
+    
     const challenges = selectedChallenges.slice(0, numStages);
     const currentChallengeId = challenges[currentStage];
     const challenge = ALL_CHALLENGES.find(c => c.id === currentChallengeId);
@@ -132,7 +175,7 @@ export default function EscapeRoom() {
       setShowHint(false);
       
       if (currentStage === challenges.length - 1) {
-        const timeTaken = customTime * 60 - timeLeft;
+        const timeTaken = startTime - timeLeft;
         setCompletedTime(timeTaken);
         setGameWon(true);
         setIsRunning(false);
@@ -166,12 +209,12 @@ export default function EscapeRoom() {
             setUserCode(nextChallenge?.challenge || "");
             setMessage(`Stage ${nextStage + 1} started (previous skipped)`);
           } else {
-            const timeTaken = customTime * 60 - timeLeft;
+            const timeTaken = startTime - timeLeft;
             setCompletedTime(timeTaken);
             setGameWon(true);
             setIsRunning(false);
             setGameMode('completed');
-            setMessage(`Game complete! Some stages skipped.`);
+            setMessage(`Game complete! Time: ${formatTime(timeTaken)} (some stages skipped)`);
             generateHTML(challenges.length, timeTaken);
           }
         }, 1500);
@@ -265,16 +308,24 @@ export default function EscapeRoom() {
   };
 
   const resetGame = () => {
-    setGameMode('setup');
     setIsRunning(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    setGameMode('setup');
     setGameWon(false);
     setCurrentStage(0);
+    setTimeLeft(0);
+    setStartTime(0);
     setMessage("");
     setUserCode("");
     setGeneratedHTML("");
     setAttemptCount(0);
     setShowHint(false);
     setSavedId("");
+    setCompletedTime(0);
   };
 
   const getThemeColors = () => {
@@ -294,12 +345,24 @@ export default function EscapeRoom() {
       <div style={{ minHeight: '100vh', background: theme.bg, padding: '40px', color: '#fff' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h1 style={{ fontSize: '3em', marginBottom: '10px' }}>🎮 Escape Room Challenge</h1>
+            <h1 style={{ fontSize: '3em', marginBottom: '10px', textShadow: '0 0 20px rgba(102, 126, 234, 0.5)' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '15px' }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Escape Room Challenge
+            </h1>
             <p style={{ fontSize: '1.2em', opacity: 0.9 }}>Student: 22206653 | Customize Your Game</p>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '30px', borderRadius: '15px', marginBottom: '30px' }}>
-            <h2 style={{ marginTop: 0 }}>🚀 Quick Start (Presets)</h2>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '30px', borderRadius: '15px', marginBottom: '30px', border: '1px solid rgba(102, 126, 234, 0.2)' }}>
+            <h2 style={{ marginTop: 0 }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '10px' }}>
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+              </svg>
+              Quick Start (Presets)
+            </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
               <button onClick={() => startPresetGame('easy')} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', padding: '20px', border: 'none', borderRadius: '10px', fontSize: '1.1em', fontWeight: 'bold', cursor: 'pointer' }}>
                 Easy<br/><span style={{ fontSize: '0.9em', opacity: 0.8 }}>15min | 2 stages</span>
@@ -313,21 +376,47 @@ export default function EscapeRoom() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '30px', borderRadius: '15px' }}>
-            <h2 style={{ marginTop: 0 }}>⚙️ Custom Game Setup</h2>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '30px', borderRadius: '15px', border: '1px solid rgba(102, 126, 234, 0.2)' }}>
+            <h2 style={{ marginTop: 0 }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '10px' }}>
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6M4.8 4.8l4.2 4.2m0 6l-4.2 4.2"/>
+              </svg>
+              Custom Game Setup
+            </h2>
             
             <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>⏱️ Timer: {customTime} minutes</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <circle cx="12" cy="13" r="9"/>
+                  <path d="M12 7v6l4 2"/>
+                </svg>
+                Timer: {customTime} minutes
+              </label>
               <input type="range" min="1" max="30" value={customTime} onChange={(e) => setCustomTime(Number(e.target.value))} style={{ width: '100%', height: '8px' }} />
             </div>
 
             <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>📝 Number of Stages: {numStages}</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Number of Stages: {numStages}
+              </label>
               <input type="range" min="1" max="10" value={numStages} onChange={(e) => setNumStages(Number(e.target.value))} style={{ width: '100%', height: '8px' }} />
             </div>
 
             <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>🎨 Background Theme</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                </svg>
+                Background Theme
+              </label>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {['dark', 'blue', 'purple', 'green'].map(t => (
                   <button key={t} onClick={() => setBackgroundTheme(t)} style={{ padding: '10px 20px', background: backgroundTheme === t ? theme.accent : 'rgba(255,255,255,0.1)', color: '#fff', border: '2px solid ' + (backgroundTheme === t ? theme.accent : 'transparent'), borderRadius: '8px', cursor: 'pointer', textTransform: 'capitalize' }}>
@@ -338,7 +427,13 @@ export default function EscapeRoom() {
             </div>
 
             <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>🎯 Select Challenges (Choose {numStages})</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.1em' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Select Challenges (Choose {numStages})
+              </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', maxHeight: '300px', overflowY: 'auto', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                 {ALL_CHALLENGES.map(challenge => (
                   <div key={challenge.id} onClick={() => toggleChallenge(challenge.id)} style={{ padding: '15px', background: selectedChallenges.includes(challenge.id) ? theme.accent : 'rgba(255,255,255,0.05)', border: '2px solid ' + (selectedChallenges.includes(challenge.id) ? theme.accent : 'transparent'), borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -353,7 +448,13 @@ export default function EscapeRoom() {
 
             {message && <div style={{ padding: '15px', background: 'rgba(239, 68, 68, 0.2)', border: '2px solid #ef4444', borderRadius: '8px', marginBottom: '20px' }}>{message}</div>}
 
-            <button onClick={startCustomGame} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg, ' + theme.accent + ' 0%, ' + theme.accent + ' 100%)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1.2em', fontWeight: 'bold', cursor: 'pointer' }}>🎮 Start Custom Game</button>
+            <button onClick={startCustomGame} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg, ' + theme.accent + ' 0%, ' + theme.accent + ' 100%)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '1.2em', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '10px' }}>
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+              </svg>
+              Start Custom Game
+            </button>
           </div>
         </div>
       </div>
@@ -366,8 +467,8 @@ export default function EscapeRoom() {
     const challenge = ALL_CHALLENGES.find(c => c.id === currentChallengeId);
 
     return (
-      <div style={{ minHeight: '100vh', background: theme.bg, padding: '20px', color: '#fff' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '30px' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85)), url(https://images.unsplash.com/photo-1519974719765-e6559eac2575?w=1920&q=80)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', padding: '20px', color: '#fff' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(0,0,0,0.7)', borderRadius: '20px', padding: '30px', backdropFilter: 'blur(10px)', border: '1px solid rgba(102, 126, 234, 0.2)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h1 style={{ margin: 0, fontSize: '2em' }}>Escape Room</h1>
@@ -376,22 +477,22 @@ export default function EscapeRoom() {
             <button onClick={resetGame} style={{ padding: '10px 20px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Quit</button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '2.5em', color: timeLeft < 60 ? '#ef4444' : '#4ade80', fontWeight: 'bold', padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '15px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '2.5em', color: timeLeft < 60 ? '#ef4444' : '#4ade80', fontWeight: 'bold', padding: '20px', background: 'rgba(0,0,0,0.5)', borderRadius: '15px', marginBottom: '20px' }}>
             <TimerIcon />
             {formatTime(timeLeft)}
           </div>
 
-          {message && <div style={{ padding: '15px', background: 'rgba(102, 126, 234, 0.2)', border: '2px solid ' + theme.accent, borderRadius: '10px', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold' }}>{message}</div>}
+          {message && <div style={{ padding: '15px', background: 'rgba(102, 126, 234, 0.2)', border: '2px solid #667eea', borderRadius: '10px', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold' }}>{message}</div>}
 
           {challenge && (
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '15px' }}>
-              <h2 style={{ color: theme.accent }}>{challenge.title}</h2>
+            <div style={{ background: 'rgba(0,0,0,0.5)', padding: '25px', borderRadius: '15px' }}>
+              <h2 style={{ color: '#667eea' }}>{challenge.title}</h2>
               <p style={{ opacity: 0.9, marginBottom: '20px' }}>{challenge.description}</p>
               
-              <textarea value={userCode} onChange={(e) => setUserCode(e.target.value)} placeholder="Write your code here..." style={{ width: '100%', minHeight: '200px', background: 'rgba(0,0,0,0.5)', color: '#4ade80', border: '2px solid ' + theme.accent, borderRadius: '10px', padding: '15px', fontFamily: 'monospace', fontSize: '14px' }} />
+              <textarea value={userCode} onChange={(e) => setUserCode(e.target.value)} placeholder="Write your code here..." style={{ width: '100%', minHeight: '200px', background: 'rgba(0,0,0,0.7)', color: '#4ade80', border: '2px solid #667eea', borderRadius: '10px', padding: '15px', fontFamily: 'monospace', fontSize: '14px' }} />
               
               <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                <button onClick={checkSolution} style={{ flex: 1, padding: '12px 30px', background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Submit Answer ({attemptCount}/3)</button>
+                <button onClick={checkSolution} disabled={!isRunning} style={{ flex: 1, padding: '12px 30px', background: isRunning ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' : '#6b7280', color: isRunning ? '#000' : '#9ca3af', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isRunning ? 'pointer' : 'not-allowed' }}>Submit Answer ({attemptCount}/3)</button>
                 <button onClick={() => setShowHint(!showHint)} style={{ padding: '12px 20px', background: 'rgba(251, 191, 36, 0.3)', color: '#fbbf24', border: '2px solid #fbbf24', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <HintIcon /> {showHint ? 'Hide' : 'Hint'}
                 </button>
@@ -413,8 +514,18 @@ export default function EscapeRoom() {
 
   return (
     <div style={{ minHeight: '100vh', background: theme.bg, padding: '20px', color: '#fff' }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3em', marginBottom: '20px' }}>🏆 You Escaped!</h1>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '30px', textAlign: 'center', border: '1px solid rgba(102, 126, 234, 0.2)' }}>
+        <h1 style={{ fontSize: '3em', marginBottom: '20px', textShadow: '0 0 20px rgba(102, 126, 234, 0.5)' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '15px' }}>
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+          </svg>
+          You Escaped!
+        </h1>
         <p style={{ fontSize: '1.5em', marginBottom: '30px' }}>Time: {formatTime(completedTime)} | Stages: {numStages}</p>
         
         {message && (
@@ -442,14 +553,31 @@ export default function EscapeRoom() {
         {generatedHTML && (
           <div style={{ textAlign: 'left', marginTop: '30px' }}>
             <h2>Generated HTML</h2>
-            <textarea value={generatedHTML} readOnly style={{ width: '100%', minHeight: '300px', background: 'rgba(0,0,0,0.5)', color: '#4ade80', border: '2px solid ' + theme.accent, borderRadius: '10px', padding: '15px', fontFamily: 'monospace', fontSize: '12px' }} />
+            <textarea value={generatedHTML} readOnly style={{ width: '100%', minHeight: '300px', background: 'rgba(0,0,0,0.5)', color: '#4ade80', border: '2px solid #667eea', borderRadius: '10px', padding: '15px', fontFamily: 'monospace', fontSize: '12px' }} />
             
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => navigator.clipboard.writeText(generatedHTML)} style={{ padding: '12px 30px', background: theme.accent, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>📋 Copy HTML</button>
-              <button onClick={saveToDatabase} disabled={!!savedId || isSaving} style={{ padding: '12px 30px', background: savedId || isSaving ? '#6b7280' : '#4ade80', color: savedId || isSaving ? '#9ca3af' : '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: savedId || isSaving ? 'not-allowed' : 'pointer' }}>
-                {isSaving ? '💾 Saving...' : savedId ? '✅ Saved' : '💾 Save to DB'}
+              <button onClick={() => navigator.clipboard.writeText(generatedHTML)} style={{ padding: '12px 30px', background: '#667eea', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy HTML
               </button>
-              <button onClick={resetGame} style={{ padding: '12px 30px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>🔄 New Game</button>
+              <button onClick={saveToDatabase} disabled={!!savedId || isSaving} style={{ padding: '12px 30px', background: savedId || isSaving ? '#6b7280' : '#4ade80', color: savedId || isSaving ? '#9ca3af' : '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: savedId || isSaving ? 'not-allowed' : 'pointer', boxShadow: savedId || isSaving ? 'none' : '0 4px 15px rgba(74, 222, 128, 0.3)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                {isSaving ? 'Saving...' : savedId ? 'Saved' : 'Save to DB'}
+              </button>
+              <button onClick={resetGame} style={{ padding: '12px 30px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '8px' }}>
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                New Game
+              </button>
             </div>
           </div>
         )}
